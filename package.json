@@ -1,0 +1,62 @@
+{
+  "name": "stills-off",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stills Off — the central hub for launching templates, tools, drives, cheat sheets, and idea boards.",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "desktop": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "desktop:build": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac --x64"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.1.0",
+    "electron": "^22.3.27",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.stillsoff.organizer",
+    "productName": "Stills Off",
+    "copyright": "Stills Off",
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "darkModeSupport": true,
+      "identity": null,
+      "type": "distribution",
+      "minimumSystemVersion": "10.13.0"
+    }
+  }
+}
