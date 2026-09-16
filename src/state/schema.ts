@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface DocType {
   id: string;
@@ -68,6 +68,12 @@ export interface AssetDef {
   addedAt: number;
 }
 
+export interface QuoteDef {
+  id: string;
+  text: string;
+  author: string;
+}
+
 export interface AppData {
   schemaVersion: number;
   docTypeIds: string[];
@@ -84,6 +90,8 @@ export interface AppData {
   boards: Record<string, BoardDef>;
   assetIds: string[];
   assets: Record<string, AssetDef>;
+  quoteIds: string[];
+  quotes: Record<string, QuoteDef>;
 }
 
 export function emptyAppData(): AppData {
@@ -103,6 +111,8 @@ export function emptyAppData(): AppData {
     boards: {},
     assetIds: [],
     assets: {},
+    quoteIds: [],
+    quotes: {},
   };
 }
 
@@ -116,6 +126,15 @@ export function migrate(raw: unknown): AppData {
 
   if (!data.schemaVersion || data.schemaVersion < 1) {
     data = { ...emptyAppData(), ...data, schemaVersion: 1 };
+  }
+
+  if ((data.schemaVersion ?? 0) < 2) {
+    data = {
+      ...data,
+      quoteIds: data.quoteIds ?? [],
+      quotes: data.quotes ?? {},
+      schemaVersion: 2,
+    };
   }
 
   const base = emptyAppData();

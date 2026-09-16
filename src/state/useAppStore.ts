@@ -10,6 +10,7 @@ import {
   type CheatSheetDef,
   type DocType,
   type DriveDef,
+  type QuoteDef,
   type ShortcutDef,
   type TemplateDef,
 } from './schema';
@@ -38,6 +39,10 @@ interface AppStore {
   addCheatSheet: (c: Omit<CheatSheetDef, 'id' | 'updatedAt'>) => string;
   updateCheatSheet: (id: string, patch: Partial<Omit<CheatSheetDef, 'id'>>) => void;
   removeCheatSheet: (id: string) => void;
+
+  addQuote: (q: Omit<QuoteDef, 'id'>) => string;
+  updateQuote: (id: string, patch: Partial<Omit<QuoteDef, 'id'>>) => void;
+  removeQuote: (id: string) => void;
 
   addBoard: (name: string) => string;
   renameBoard: (id: string, name: string) => void;
@@ -265,6 +270,47 @@ export const useAppStore = create<AppStore>((set) => ({
         ...s.data,
         cheatSheetIds: s.data.cheatSheetIds.filter((x) => x !== id),
         cheatSheets,
+      };
+      persist(data);
+      return { data };
+    });
+  },
+
+  addQuote: (q) => {
+    const id = makeId();
+    set((s) => {
+      const data: AppData = {
+        ...s.data,
+        quoteIds: [...s.data.quoteIds, id],
+        quotes: { ...s.data.quotes, [id]: { ...q, id } },
+      };
+      persist(data);
+      return { data };
+    });
+    return id;
+  },
+
+  updateQuote: (id, patch) => {
+    set((s) => {
+      const existing = s.data.quotes[id];
+      if (!existing) return s;
+      const data: AppData = {
+        ...s.data,
+        quotes: { ...s.data.quotes, [id]: { ...existing, ...patch } },
+      };
+      persist(data);
+      return { data };
+    });
+  },
+
+  removeQuote: (id) => {
+    set((s) => {
+      const quotes = { ...s.data.quotes };
+      delete quotes[id];
+      const data: AppData = {
+        ...s.data,
+        quoteIds: s.data.quoteIds.filter((x) => x !== id),
+        quotes,
       };
       persist(data);
       return { data };
