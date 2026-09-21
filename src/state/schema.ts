@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export interface DocType {
   id: string;
@@ -74,6 +74,74 @@ export interface QuoteDef {
   author: string;
 }
 
+export interface ContactDef {
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+  notes: string;
+  updatedAt: number;
+}
+
+export interface VaultEntryDef {
+  id: string;
+  label: string;
+  username: string;
+  /** Base64 ciphertext from Electron's safeStorage — only readable on this Mac, under this login. */
+  passwordCipher: string;
+  notes: string;
+  updatedAt: number;
+}
+
+export interface RecentFileEntry {
+  id: string;
+  label: string;
+  path: string;
+  openedAt: number;
+}
+
+export interface DailyBPTarget {
+  id: string;
+  /** '' means no one was assigned — assigning a name is always optional. */
+  person: string;
+  target: number;
+}
+
+export interface DailyBPDay {
+  date: string; // YYYY-MM-DD, local
+  shotsAchieved: number;
+  shotsTargets: DailyBPTarget[];
+  packagesAchieved: number;
+  packagesTargets: DailyBPTarget[];
+}
+
+export interface DailyBPSettings {
+  shotsQuota: number;
+  packagesQuota: number;
+}
+
+/** What a trashed item was, so it can be rebuilt on restore and described in the Trash list. */
+export type TrashKind =
+  | 'docType'
+  | 'template'
+  | 'shortcut'
+  | 'drive'
+  | 'cheatSheet'
+  | 'quote'
+  | 'board'
+  | 'contact'
+  | 'vaultEntry';
+
+export interface TrashEntry {
+  id: string;
+  kind: TrashKind;
+  /** What to show in the Trash list — the item's own label/title/name. */
+  label: string;
+  payload: unknown;
+  deletedAt: number;
+}
+
 export interface AppData {
   schemaVersion: number;
   docTypeIds: string[];
@@ -92,6 +160,16 @@ export interface AppData {
   assets: Record<string, AssetDef>;
   quoteIds: string[];
   quotes: Record<string, QuoteDef>;
+  contactIds: string[];
+  contacts: Record<string, ContactDef>;
+  vaultEntryIds: string[];
+  vaultEntries: Record<string, VaultEntryDef>;
+  recentFileIds: string[];
+  recentFiles: Record<string, RecentFileEntry>;
+  dailyBPSettings: DailyBPSettings;
+  dailyBPDays: Record<string, DailyBPDay>;
+  trashIds: string[];
+  trash: Record<string, TrashEntry>;
 }
 
 export function emptyAppData(): AppData {
@@ -113,6 +191,16 @@ export function emptyAppData(): AppData {
     assets: {},
     quoteIds: [],
     quotes: {},
+    contactIds: [],
+    contacts: {},
+    vaultEntryIds: [],
+    vaultEntries: {},
+    recentFileIds: [],
+    recentFiles: {},
+    dailyBPSettings: { shotsQuota: 0, packagesQuota: 0 },
+    dailyBPDays: {},
+    trashIds: [],
+    trash: {},
   };
 }
 
@@ -134,6 +222,23 @@ export function migrate(raw: unknown): AppData {
       quoteIds: data.quoteIds ?? [],
       quotes: data.quotes ?? {},
       schemaVersion: 2,
+    };
+  }
+
+  if ((data.schemaVersion ?? 0) < 3) {
+    data = {
+      ...data,
+      contactIds: data.contactIds ?? [],
+      contacts: data.contacts ?? {},
+      vaultEntryIds: data.vaultEntryIds ?? [],
+      vaultEntries: data.vaultEntries ?? {},
+      recentFileIds: data.recentFileIds ?? [],
+      recentFiles: data.recentFiles ?? {},
+      dailyBPSettings: data.dailyBPSettings ?? { shotsQuota: 0, packagesQuota: 0 },
+      dailyBPDays: data.dailyBPDays ?? {},
+      trashIds: data.trashIds ?? [],
+      trash: data.trash ?? {},
+      schemaVersion: 3,
     };
   }
 

@@ -14,6 +14,11 @@ export interface StillsOffBridge {
   writeAssetThumb(hash: string, base64: string): Promise<string>;
   exportBuffer(filePath: string, base64: string): Promise<boolean>;
   assetUrl(fileName: string): string;
+  vaultIsAvailable(): Promise<boolean>;
+  vaultEncrypt(plainText: string): Promise<string>;
+  vaultDecrypt(cipherBase64: string): Promise<string>;
+  listDir(targetPath: string): Promise<{ name: string; path: string; modifiedAt: number }[]>;
+  runBackup(destFolder: string): Promise<string>;
 }
 
 declare global {

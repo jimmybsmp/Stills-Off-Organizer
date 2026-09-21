@@ -1,9 +1,22 @@
 import { useState } from 'react';
 import { useAppStore } from '@/state/useAppStore';
 import type { Section } from '@/components/nav/Sidebar';
-import { FileText, AppWindow, HardDrive, BookOpen, LayoutGrid, Pencil, type LucideIcon } from 'lucide-react';
+import {
+  FileText,
+  AppWindow,
+  HardDrive,
+  BookOpen,
+  LayoutGrid,
+  Pencil,
+  Users,
+  Lock,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { quoteOfDayId } from '@/lib/quoteOfDay';
 import { QuoteManager } from './QuoteManager';
+import { DailyBP } from './DailyBP';
+import { RecentFiles } from './RecentFiles';
 
 interface HomeProps {
   onNavigate: (s: Section) => void;
@@ -22,6 +35,9 @@ export function Home({ onNavigate }: HomeProps) {
   const driveCount = useAppStore((s) => s.data.driveIds.length);
   const cheatSheetCount = useAppStore((s) => s.data.cheatSheetIds.length);
   const boardCount = useAppStore((s) => s.data.boardIds.length);
+  const contactCount = useAppStore((s) => s.data.contactIds.length);
+  const vaultCount = useAppStore((s) => s.data.vaultEntryIds.length);
+  const trashCount = useAppStore((s) => s.data.trashIds.length);
   const quoteIds = useAppStore((s) => s.data.quoteIds);
   const quotes = useAppStore((s) => s.data.quotes);
   const [managingQuotes, setManagingQuotes] = useState(false);
@@ -34,6 +50,9 @@ export function Home({ onNavigate }: HomeProps) {
     { section: 'drives', label: 'Drives', count: driveCount, Icon: HardDrive },
     { section: 'cheatsheets', label: 'Cheat Sheets', count: cheatSheetCount, Icon: BookOpen },
     { section: 'ideaboard', label: 'Idea Boards', count: boardCount, Icon: LayoutGrid },
+    { section: 'contacts', label: 'Contacts', count: contactCount, Icon: Users },
+    { section: 'vault', label: 'Vault', count: vaultCount, Icon: Lock },
+    { section: 'trash', label: 'Trash', count: trashCount, Icon: Trash2 },
   ];
 
   return (
@@ -59,6 +78,11 @@ export function Home({ onNavigate }: HomeProps) {
         >
           <Pencil size={13} />
         </button>
+      </div>
+
+      <div className="home__panels">
+        <DailyBP />
+        <RecentFiles />
       </div>
 
       <div className="home__grid">

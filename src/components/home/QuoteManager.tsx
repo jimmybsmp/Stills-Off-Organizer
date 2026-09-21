@@ -50,7 +50,12 @@ export function QuoteManager({ onClose }: QuoteManagerProps) {
                   placeholder="Attribution, e.g. Ansel Adams"
                 />
               </div>
-              <button className="btn btn--icon btn--danger" onClick={() => removeQuote(id)}>
+              <button
+                className="btn btn--icon btn--danger"
+                onClick={() => {
+                  if (window.confirm('Move this quote to trash?')) removeQuote(id);
+                }}
+              >
                 <Trash2 size={16} />
               </button>
             </li>

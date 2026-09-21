@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, protocol, safeStorage } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
@@ -166,4 +166,43 @@ ipcMain.handle('file:exportBuffer', async (_evt, filePath, base64) => {
   await fsp.mkdir(path.dirname(filePath), { recursive: true });
   await fsp.writeFile(filePath, Buffer.from(base64, 'base64'));
   return true;
+});
+
+// --- vault (safeStorage, backed by the macOS Keychain) -------------------
+
+ipcMain.handle('vault:isAvailable', () => safeStorage.isEncryptionAvailable());
+
+ipcMain.handle('vault:encrypt', (_evt, plainText) => {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure storage is not available on this machine.');
+  return safeStorage.encryptString(plainText).toString('base64');
+});
+
+ipcMain.handle('vault:decrypt', (_evt, cipherBase64) => {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure storage is not available on this machine.');
+  return safeStorage.decryptString(Buffer.from(cipherBase64, 'base64'));
+});
+
+// --- folder browsing -------------------------------------------------
+
+ipcMain.handle('fs:listDir', async (_evt, targetPath) => {
+  const entries = await fsp.readdir(targetPath, { withFileTypes: true });
+  const files = await Promise.all(
+    entries
+      .filter((e) => e.isFile())
+      .map(async (e) => {
+        const full = path.join(targetPath, e.name);
+        const stat = await fsp.stat(full);
+        return { name: e.name, path: full, modifiedAt: stat.mtimeMs };
+      }),
+  );
+  return files.sort((a, b) => b.modifiedAt - a.modifiedAt);
+});
+
+// --- backup -------------------------------------------------
+
+ipcMain.handle('backup:run', async (_evt, destFolder) => {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const target = path.join(destFolder, `StillsOff-Backup-${stamp}`);
+  await fsp.cp(userDataDir, target, { recursive: true });
+  return target;
 });

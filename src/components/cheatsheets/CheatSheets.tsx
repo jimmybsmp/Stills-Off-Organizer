@@ -81,10 +81,15 @@ export function CheatSheets() {
                 onChange={(e) => updateCheatSheet(selected.id, { title: e.target.value })}
                 placeholder="Title"
               />
-              <button className="btn btn--icon btn--danger" onClick={() => {
-                removeCheatSheet(selected.id);
-                setSelectedId(null);
-              }}>
+              <button
+                className="btn btn--icon btn--danger"
+                onClick={() => {
+                  if (window.confirm(`Move "${selected.title || 'Untitled'}" to trash?`)) {
+                    removeCheatSheet(selected.id);
+                    setSelectedId(null);
+                  }
+                }}
+              >
                 <Trash2 size={16} />
               </button>
             </div>

@@ -7,7 +7,12 @@ import { Shortcuts } from '@/components/shortcuts/Shortcuts';
 import { Drives } from '@/components/drives/Drives';
 import { CheatSheets } from '@/components/cheatsheets/CheatSheets';
 import { IdeaBoards } from '@/components/ideaboard/IdeaBoards';
+import { Contacts } from '@/components/contacts/Contacts';
+import { Vault } from '@/components/vault/Vault';
+import { Trash } from '@/components/trash/Trash';
 import { isDesktop } from '@/lib/desktop';
+
+const TRASH_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
 export default function App() {
   const ready = useAppStore((s) => s.ready);
@@ -17,6 +22,13 @@ export default function App() {
   useEffect(() => {
     init();
   }, [init]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      useAppStore.getState().purgeExpiredTrash();
+    }, TRASH_CHECK_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!ready) {
     return <div className="app-loading">Loading Stills Off…</div>;
@@ -37,6 +49,9 @@ export default function App() {
         {section === 'drives' && <Drives />}
         {section === 'cheatsheets' && <CheatSheets />}
         {section === 'ideaboard' && <IdeaBoards />}
+        {section === 'contacts' && <Contacts />}
+        {section === 'vault' && <Vault />}
+        {section === 'trash' && <Trash />}
       </main>
     </div>
   );

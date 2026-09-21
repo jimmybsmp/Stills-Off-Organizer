@@ -13,11 +13,15 @@ export function Shortcuts() {
   const [manageMode, setManageMode] = useState(false);
   const [errorFor, setErrorFor] = useState<string | null>(null);
 
-  async function launch(targetPath: string, id: string) {
+  async function launch(targetPath: string, id: string, label: string) {
     if (!isDesktop()) return;
     setErrorFor(null);
     const err = await desktop().openPath(targetPath);
-    if (err) setErrorFor(id);
+    if (err) {
+      setErrorFor(id);
+    } else {
+      useAppStore.getState().pushRecentFile(label, targetPath);
+    }
   }
 
   return (
@@ -46,14 +50,19 @@ export function Shortcuts() {
             <div key={id} className="launch-card">
               <button
                 className="launch-card__body"
-                onClick={() => (manageMode ? undefined : launch(sc.targetPath, id))}
+                onClick={() => (manageMode ? undefined : launch(sc.targetPath, id, sc.label))}
                 disabled={manageMode}
               >
                 <span className="launch-card__icon">{sc.icon}</span>
                 <span className="launch-card__label">{sc.label}</span>
               </button>
               {manageMode && (
-                <button className="launch-card__remove" onClick={() => removeShortcut(id)}>
+                <button
+                  className="launch-card__remove"
+                  onClick={() => {
+                    if (window.confirm(`Move "${sc.label}" to trash?`)) removeShortcut(id);
+                  }}
+                >
                   <Trash2 size={14} />
                 </button>
               )}

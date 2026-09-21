@@ -1,4 +1,5 @@
 import { desktop } from './desktop';
+import { useAppStore } from '@/state/useAppStore';
 import type { DocType } from '@/state/schema';
 
 function monthFolderName(): string {
@@ -30,4 +31,5 @@ export async function launchTemplateCopy(
   const finalPath = await bridge.copyFile(sourcePath, destPath);
   const err = await bridge.openPath(finalPath);
   if (err) throw new Error(err);
+  useAppStore.getState().pushRecentFile(fileName, finalPath);
 }

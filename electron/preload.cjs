@@ -22,4 +22,12 @@ contextBridge.exposeInMainWorld('stillsoff', {
   exportBuffer: (filePath, base64) => ipcRenderer.invoke('file:exportBuffer', filePath, base64),
 
   assetUrl: (fileName) => `stillsoff-asset://${encodeURIComponent(fileName)}`,
+
+  vaultIsAvailable: () => ipcRenderer.invoke('vault:isAvailable'),
+  vaultEncrypt: (plainText) => ipcRenderer.invoke('vault:encrypt', plainText),
+  vaultDecrypt: (cipherBase64) => ipcRenderer.invoke('vault:decrypt', cipherBase64),
+
+  listDir: (targetPath) => ipcRenderer.invoke('fs:listDir', targetPath),
+
+  runBackup: (destFolder) => ipcRenderer.invoke('backup:run', destFolder),
 });

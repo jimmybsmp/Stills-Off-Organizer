@@ -26,6 +26,22 @@ a live count for each section. From there:
 5. **Idea Boards** — drag JPEGs in from Finder onto a board, arrange and
    resize them, and export the board as a flattened PNG. The same frame
    dropped onto two boards is stored once (content-addressed by hash).
+6. **Contacts** — a small searchable rolodex (name, role, phone, email,
+   notes).
+7. **Vault** — passwords and logins, encrypted with this Mac's own login via
+   Electron's `safeStorage` (backed by the macOS Keychain). Only readable on
+   this machine, under this login — see "Known gaps."
+8. **Trash** — anything deleted (a template, a cheat sheet, a contact, a
+   whole idea board, ...) sits here for 24 hours before it's gone for good,
+   with a one-click Restore. Deleting always asks first.
+
+Home also carries **Daily BP** (two stat tiles — Shots in the Can and Photo
+Packages — each with an editable quota, today's count, and an optional list
+of per-person targets picked from a short preset list or typed in) and
+**Recent Files** (the last things opened from Templates, Tools, Drives, or
+the folder browser, one click to reopen). The sidebar's "Show help" toggle
+adds a one-line plain-English caption under every nav item, and "Back Up My
+Data" copies the whole data file and asset store to a folder you choose.
 
 Everything except the home dashboard's counts needs the desktop shell —
 there's a banner across the top when the app is running outside it (e.g. in
@@ -34,10 +50,13 @@ a browser during development).
 ## Data & files
 
 Everything the app tracks — document types, templates, tool shortcuts,
-drives, cheat sheets, and idea boards — lives in one JSON file in the app's
-user data directory, autosaved on every change. Idea board images are stored
-as real files (content-addressed by a SHA-256 hash of their bytes) alongside
-a generated thumbnail, never inlined into that JSON.
+drives, cheat sheets, idea boards, contacts, vault entries, Daily BP, and
+recent files — lives in one JSON file in the app's user data directory,
+autosaved on every change. Idea board images are stored as real files
+(content-addressed by a SHA-256 hash of their bytes) alongside a generated
+thumbnail, never inlined into that JSON. Deleting anything moves it into a
+`trash` bucket in that same file instead of removing it outright; a purge
+sweep (on launch and every 15 minutes) drops anything older than 24 hours.
 
 Template launches don't inline anything either: launching a template copies
 the source file into its document type's folder before handing it to Word or
@@ -88,3 +107,13 @@ This targets Intel Macs (`--mac --x64`) with a minimum OS version of
 - **No search across cheat sheets' rendering.** Bodies are stored and shown
   as plain text (with line breaks), not Markdown — that's a deliberate v1
   simplification, not a limitation of the storage format.
+- **The Vault only decrypts on the Mac (and macOS login) that encrypted it.**
+  `safeStorage` ties the ciphertext to the OS account, so a `.stillsoff-data`
+  file copied to another machine, or restored under a different login, keeps
+  every other field but shows vault passwords as unreadable. Usernames and
+  notes are plain text by design — don't put a second password in the notes
+  field.
+- **Board items skip the Trash.** Removing an image from an idea board
+  deletes it immediately rather than going through the 24-hour undo — low
+  stakes, since the same frame is one re-drag away (content-addressed
+  assets aren't deleted from disk either way).

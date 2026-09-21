@@ -57,7 +57,12 @@ export function BoardGallery({ onOpen }: BoardGalleryProps) {
                   {board.itemIds.length} image{board.itemIds.length === 1 ? '' : 's'}
                 </span>
               </button>
-              <button className="board-tile__remove" onClick={() => removeBoard(id)}>
+              <button
+                className="board-tile__remove"
+                onClick={() => {
+                  if (window.confirm(`Move "${board.name || 'Untitled board'}" to trash?`)) removeBoard(id);
+                }}
+              >
                 <Trash2 size={14} />
               </button>
             </div>

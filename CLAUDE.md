@@ -57,6 +57,28 @@ access, so there is one build, not two.
   `src/state/schema.ts` and add a branch to `migrate()`. Never edit an
   existing branch — a data file saved by an older build still has to enter
   through its original step.
+- **Deleting goes through Trash, not straight to `delete`.** Every
+  `remove*` action in `src/state/useAppStore.ts` calls the module-local
+  `trash()` helper instead of just dropping the item, so it lands in
+  `data.trash`/`trashIds` with a `kind`, a human label, and a `deletedAt`.
+  `purgeExpiredTrash()` (run on `init()` and every 15 minutes from
+  `App.tsx`) is the only thing that removes a trash entry for good, past
+  the 24-hour mark. A new trashable collection needs a case in both
+  `restoreFromTrash`'s switch and the `TrashKind` union — the switch is
+  exhaustive on purpose, so a forgotten kind is a compile error, not a
+  silent no-op restore. Idea-board items are the one deliberate exception —
+  see the README's "Known gaps".
+- **Every delete button confirms first.** A plain `window.confirm(...)`
+  before the `remove*` call, everywhere one exists — not a custom modal,
+  since Trash already provides the real undo path and a native confirm is
+  one line per call site instead of a whole component.
+- **The Vault never touches plaintext outside `electron/main.cjs`.**
+  `passwordCipher` on a `VaultEntryDef` is base64 from Electron's
+  `safeStorage.encryptString`, produced and consumed only via the
+  `vault:encrypt`/`vault:decrypt` IPC calls — a component calls
+  `desktop().vaultEncrypt`/`vaultDecrypt`, never stores a raw password in
+  React state longer than the reveal/edit UI needs it, and never writes one
+  into `AppData` directly.
 - **It has to work offline.** No CDN, no runtime network calls. The only
   outbound action the app ever takes is handing a `smb://`/`afp://` address
   to the OS via `shell.openExternal`, which is the user's own request to
@@ -83,5 +105,6 @@ design pass comes once the feature set is confirmed.
 See the README's "Known gaps" section — `dmg` packaging and code signing
 both need a real Mac, Word/Excel autosave stops at file creation (the app
 can't reach into another app's document once it's open), network drives hand
-off to Finder's own connect dialog, and cheat sheet bodies are plain text
-rather than Markdown for now.
+off to Finder's own connect dialog, cheat sheet bodies are plain text rather
+than Markdown for now, the Vault only decrypts on the Mac/login that
+encrypted it, and idea-board items skip Trash.

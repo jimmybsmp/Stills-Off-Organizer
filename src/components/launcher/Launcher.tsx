@@ -61,7 +61,12 @@ export function Launcher() {
                 <span className="launch-card__ext">.{tpl.extension}</span>
               </button>
               {manageMode && (
-                <button className="launch-card__remove" onClick={() => removeTemplate(id)}>
+                <button
+                  className="launch-card__remove"
+                  onClick={() => {
+                    if (window.confirm(`Move "${tpl.label}" to trash?`)) removeTemplate(id);
+                  }}
+                >
                   <Trash2 size={14} />
                 </button>
               )}

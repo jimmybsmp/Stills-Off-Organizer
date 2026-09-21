@@ -39,13 +39,14 @@ export function Drives() {
     };
   }, [driveIds, drives]);
 
-  async function open(path: string) {
+  async function open(path: string, label: string) {
     if (!isDesktop()) return;
     const bridge = desktop();
     if (isNetworkAddress(path)) {
       await bridge.openExternal(path);
     } else {
       await bridge.openPath(path);
+      useAppStore.getState().pushRecentFile(label, path);
     }
   }
 
@@ -77,7 +78,7 @@ export function Drives() {
             <div key={id} className="launch-card">
               <button
                 className="launch-card__body"
-                onClick={() => (manageMode ? undefined : open(drive.path))}
+                onClick={() => (manageMode ? undefined : open(drive.path, drive.label))}
                 disabled={manageMode}
               >
                 <span className="launch-card__icon">{drive.icon}</span>
@@ -97,7 +98,12 @@ export function Drives() {
                 </span>
               </button>
               {manageMode && (
-                <button className="launch-card__remove" onClick={() => removeDrive(id)}>
+                <button
+                  className="launch-card__remove"
+                  onClick={() => {
+                    if (window.confirm(`Move "${drive.label}" to trash?`)) removeDrive(id);
+                  }}
+                >
                   <Trash2 size={14} />
                 </button>
               )}

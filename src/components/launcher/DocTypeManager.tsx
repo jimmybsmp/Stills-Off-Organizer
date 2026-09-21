@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useAppStore } from '@/state/useAppStore';
 import { Modal } from '@/components/common/Modal';
+import { FolderBrowser } from './FolderBrowser';
+import { resolveDestinationFolder } from '@/lib/paths';
 import { desktop, isDesktop } from '@/lib/desktop';
-import { Folder, Trash2 } from 'lucide-react';
+import { Folder, FolderOpen, Trash2 } from 'lucide-react';
 
 interface DocTypeManagerProps {
   onClose: () => void;
@@ -18,6 +20,7 @@ export function DocTypeManager({ onClose }: DocTypeManagerProps) {
   const [label, setLabel] = useState('');
   const [folder, setFolder] = useState('');
   const [dateSubfolder, setDateSubfolder] = useState(false);
+  const [browsing, setBrowsing] = useState<string | null>(null);
 
   async function pickFolder() {
     if (!isDesktop()) return;
@@ -62,7 +65,19 @@ export function DocTypeManager({ onClose }: DocTypeManagerProps) {
                 />
                 monthly subfolder
               </label>
-              <button className="btn btn--icon btn--danger" onClick={() => removeDocType(id)}>
+              {isDesktop() && (
+                <button className="btn btn--icon" onClick={() => setBrowsing(resolveDestinationFolder(dt))} title="Browse folder">
+                  <FolderOpen size={16} />
+                </button>
+              )}
+              <button
+                className="btn btn--icon btn--danger"
+                onClick={() => {
+                  if (window.confirm(`Move "${dt.label}" to trash? Templates using it will need a new type.`)) {
+                    removeDocType(id);
+                  }
+                }}
+              >
                 <Trash2 size={16} />
               </button>
             </li>
@@ -94,6 +109,8 @@ export function DocTypeManager({ onClose }: DocTypeManagerProps) {
           Add
         </button>
       </div>
+
+      {browsing && <FolderBrowser folder={browsing} onClose={() => setBrowsing(null)} />}
     </Modal>
   );
 }

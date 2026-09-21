@@ -8,12 +8,23 @@ import {
   type AssetDef,
   type BoardItem,
   type CheatSheetDef,
+  type ContactDef,
+  type DailyBPDay,
+  type DailyBPTarget,
   type DocType,
   type DriveDef,
   type QuoteDef,
   type ShortcutDef,
   type TemplateDef,
+  type TrashEntry,
+  type TrashKind,
+  type VaultEntryDef,
 } from './schema';
+
+const TRASH_RETENTION_MS = 24 * 60 * 60 * 1000;
+const RECENT_FILES_MAX = 10;
+
+type DailyBPStat = 'shots' | 'packages';
 
 interface AppStore {
   data: AppData;
@@ -52,10 +63,43 @@ interface AppStore {
   removeBoardItem: (boardId: string, itemId: string) => void;
 
   registerAsset: (asset: Omit<AssetDef, 'id'>, id: string) => void;
+
+  addContact: (c: Omit<ContactDef, 'id' | 'updatedAt'>) => string;
+  updateContact: (id: string, patch: Partial<Omit<ContactDef, 'id'>>) => void;
+  removeContact: (id: string) => void;
+
+  addVaultEntry: (v: Omit<VaultEntryDef, 'id' | 'updatedAt'>) => string;
+  updateVaultEntry: (id: string, patch: Partial<Omit<VaultEntryDef, 'id'>>) => void;
+  removeVaultEntry: (id: string) => void;
+
+  pushRecentFile: (label: string, path: string) => void;
+
+  setDailyBPQuota: (stat: DailyBPStat, quota: number) => void;
+  setDailyBPAchieved: (dateKey: string, stat: DailyBPStat, achieved: number) => void;
+  addDailyBPTarget: (dateKey: string, stat: DailyBPStat, person: string, target: number) => string;
+  removeDailyBPTarget: (dateKey: string, stat: DailyBPStat, targetId: string) => void;
+
+  restoreFromTrash: (trashId: string) => void;
+  deleteForever: (trashId: string) => void;
+  purgeExpiredTrash: () => void;
 }
 
 function persist(data: AppData) {
   scheduleAutosave(data);
+}
+
+function emptyDay(dateKey: string): DailyBPDay {
+  return { date: dateKey, shotsAchieved: 0, shotsTargets: [], packagesAchieved: 0, packagesTargets: [] };
+}
+
+function trash(data: AppData, kind: TrashKind, label: string, payload: unknown): AppData {
+  const id = makeId();
+  const entry: TrashEntry = { id, kind, label, payload, deletedAt: Date.now() };
+  return {
+    ...data,
+    trashIds: [...data.trashIds, id],
+    trash: { ...data.trash, [id]: entry },
+  };
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -66,6 +110,7 @@ export const useAppStore = create<AppStore>((set) => ({
     const raw = await loadAppData();
     const data = migrate(raw ? JSON.parse(raw) : null);
     set({ data, ready: true });
+    useAppStore.getState().purgeExpiredTrash();
   },
 
   addDocType: (docType) => {
@@ -97,13 +142,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeDocType: (id) => {
     set((s) => {
+      const existing = s.data.docTypes[id];
+      if (!existing) return s;
       const docTypes = { ...s.data.docTypes };
       delete docTypes[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         docTypeIds: s.data.docTypeIds.filter((x) => x !== id),
         docTypes,
       };
+      data = trash(data, 'docType', existing.label, existing);
       persist(data);
       return { data };
     });
@@ -138,13 +186,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeTemplate: (id) => {
     set((s) => {
+      const existing = s.data.templates[id];
+      if (!existing) return s;
       const templates = { ...s.data.templates };
       delete templates[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         templateIds: s.data.templateIds.filter((x) => x !== id),
         templates,
       };
+      data = trash(data, 'template', existing.label, existing);
       persist(data);
       return { data };
     });
@@ -179,13 +230,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeShortcut: (id) => {
     set((s) => {
+      const existing = s.data.shortcuts[id];
+      if (!existing) return s;
       const shortcuts = { ...s.data.shortcuts };
       delete shortcuts[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         shortcutIds: s.data.shortcutIds.filter((x) => x !== id),
         shortcuts,
       };
+      data = trash(data, 'shortcut', existing.label, existing);
       persist(data);
       return { data };
     });
@@ -220,13 +274,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeDrive: (id) => {
     set((s) => {
+      const existing = s.data.drives[id];
+      if (!existing) return s;
       const drives = { ...s.data.drives };
       delete drives[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         driveIds: s.data.driveIds.filter((x) => x !== id),
         drives,
       };
+      data = trash(data, 'drive', existing.label, existing);
       persist(data);
       return { data };
     });
@@ -264,13 +321,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeCheatSheet: (id) => {
     set((s) => {
+      const existing = s.data.cheatSheets[id];
+      if (!existing) return s;
       const cheatSheets = { ...s.data.cheatSheets };
       delete cheatSheets[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         cheatSheetIds: s.data.cheatSheetIds.filter((x) => x !== id),
         cheatSheets,
       };
+      data = trash(data, 'cheatSheet', existing.title || 'Untitled', existing);
       persist(data);
       return { data };
     });
@@ -305,13 +365,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeQuote: (id) => {
     set((s) => {
+      const existing = s.data.quotes[id];
+      if (!existing) return s;
       const quotes = { ...s.data.quotes };
       delete quotes[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         quoteIds: s.data.quoteIds.filter((x) => x !== id),
         quotes,
       };
+      data = trash(data, 'quote', existing.text.slice(0, 60), existing);
       persist(data);
       return { data };
     });
@@ -347,13 +410,16 @@ export const useAppStore = create<AppStore>((set) => ({
 
   removeBoard: (id) => {
     set((s) => {
+      const existing = s.data.boards[id];
+      if (!existing) return s;
       const boards = { ...s.data.boards };
       delete boards[id];
-      const data: AppData = {
+      let data: AppData = {
         ...s.data,
         boardIds: s.data.boardIds.filter((x) => x !== id),
         boards,
       };
+      data = trash(data, 'board', existing.name || 'Untitled board', existing);
       persist(data);
       return { data };
     });
@@ -419,6 +485,285 @@ export const useAppStore = create<AppStore>((set) => ({
         ...s.data,
         assetIds: [...s.data.assetIds, id],
         assets: { ...s.data.assets, [id]: { ...asset, id } },
+      };
+      persist(data);
+      return { data };
+    });
+  },
+
+  addContact: (c) => {
+    const id = makeId();
+    set((s) => {
+      const data: AppData = {
+        ...s.data,
+        contactIds: [...s.data.contactIds, id],
+        contacts: { ...s.data.contacts, [id]: { ...c, id, updatedAt: Date.now() } },
+      };
+      persist(data);
+      return { data };
+    });
+    return id;
+  },
+
+  updateContact: (id, patch) => {
+    set((s) => {
+      const existing = s.data.contacts[id];
+      if (!existing) return s;
+      const data: AppData = {
+        ...s.data,
+        contacts: { ...s.data.contacts, [id]: { ...existing, ...patch, updatedAt: Date.now() } },
+      };
+      persist(data);
+      return { data };
+    });
+  },
+
+  removeContact: (id) => {
+    set((s) => {
+      const existing = s.data.contacts[id];
+      if (!existing) return s;
+      const contacts = { ...s.data.contacts };
+      delete contacts[id];
+      let data: AppData = {
+        ...s.data,
+        contactIds: s.data.contactIds.filter((x) => x !== id),
+        contacts,
+      };
+      data = trash(data, 'contact', existing.name || 'Unnamed contact', existing);
+      persist(data);
+      return { data };
+    });
+  },
+
+  addVaultEntry: (v) => {
+    const id = makeId();
+    set((s) => {
+      const data: AppData = {
+        ...s.data,
+        vaultEntryIds: [...s.data.vaultEntryIds, id],
+        vaultEntries: { ...s.data.vaultEntries, [id]: { ...v, id, updatedAt: Date.now() } },
+      };
+      persist(data);
+      return { data };
+    });
+    return id;
+  },
+
+  updateVaultEntry: (id, patch) => {
+    set((s) => {
+      const existing = s.data.vaultEntries[id];
+      if (!existing) return s;
+      const data: AppData = {
+        ...s.data,
+        vaultEntries: {
+          ...s.data.vaultEntries,
+          [id]: { ...existing, ...patch, updatedAt: Date.now() },
+        },
+      };
+      persist(data);
+      return { data };
+    });
+  },
+
+  removeVaultEntry: (id) => {
+    set((s) => {
+      const existing = s.data.vaultEntries[id];
+      if (!existing) return s;
+      const vaultEntries = { ...s.data.vaultEntries };
+      delete vaultEntries[id];
+      let data: AppData = {
+        ...s.data,
+        vaultEntryIds: s.data.vaultEntryIds.filter((x) => x !== id),
+        vaultEntries,
+      };
+      data = trash(data, 'vaultEntry', existing.label, existing);
+      persist(data);
+      return { data };
+    });
+  },
+
+  pushRecentFile: (label, path) => {
+    const id = makeId();
+    set((s) => {
+      const withoutDuplicate = s.data.recentFileIds.filter((x) => s.data.recentFiles[x]?.path !== path);
+      const keptIds = [id, ...withoutDuplicate].slice(0, RECENT_FILES_MAX);
+      const droppedIds = [id, ...withoutDuplicate].slice(RECENT_FILES_MAX);
+      const recentFiles = { ...s.data.recentFiles };
+      for (const droppedId of droppedIds) delete recentFiles[droppedId];
+      recentFiles[id] = { id, label, path, openedAt: Date.now() };
+      const data: AppData = { ...s.data, recentFileIds: keptIds, recentFiles };
+      persist(data);
+      return { data };
+    });
+  },
+
+  setDailyBPQuota: (stat, quota) => {
+    set((s) => {
+      const dailyBPSettings = {
+        ...s.data.dailyBPSettings,
+        [stat === 'shots' ? 'shotsQuota' : 'packagesQuota']: quota,
+      };
+      const data: AppData = { ...s.data, dailyBPSettings };
+      persist(data);
+      return { data };
+    });
+  },
+
+  setDailyBPAchieved: (dateKey, stat, achieved) => {
+    set((s) => {
+      const day = s.data.dailyBPDays[dateKey] ?? emptyDay(dateKey);
+      const nextDay: DailyBPDay =
+        stat === 'shots' ? { ...day, shotsAchieved: achieved } : { ...day, packagesAchieved: achieved };
+      const data: AppData = { ...s.data, dailyBPDays: { ...s.data.dailyBPDays, [dateKey]: nextDay } };
+      persist(data);
+      return { data };
+    });
+  },
+
+  addDailyBPTarget: (dateKey, stat, person, target) => {
+    const id = makeId();
+    set((s) => {
+      const day = s.data.dailyBPDays[dateKey] ?? emptyDay(dateKey);
+      const row: DailyBPTarget = { id, person, target };
+      const nextDay: DailyBPDay =
+        stat === 'shots'
+          ? { ...day, shotsTargets: [...day.shotsTargets, row] }
+          : { ...day, packagesTargets: [...day.packagesTargets, row] };
+      const data: AppData = { ...s.data, dailyBPDays: { ...s.data.dailyBPDays, [dateKey]: nextDay } };
+      persist(data);
+      return { data };
+    });
+    return id;
+  },
+
+  removeDailyBPTarget: (dateKey, stat, targetId) => {
+    set((s) => {
+      const day = s.data.dailyBPDays[dateKey];
+      if (!day) return s;
+      const nextDay: DailyBPDay =
+        stat === 'shots'
+          ? { ...day, shotsTargets: day.shotsTargets.filter((t) => t.id !== targetId) }
+          : { ...day, packagesTargets: day.packagesTargets.filter((t) => t.id !== targetId) };
+      const data: AppData = { ...s.data, dailyBPDays: { ...s.data.dailyBPDays, [dateKey]: nextDay } };
+      persist(data);
+      return { data };
+    });
+  },
+
+  restoreFromTrash: (trashId) => {
+    set((s) => {
+      const entry = s.data.trash[trashId];
+      if (!entry) return s;
+      const trashLeft = { ...s.data.trash };
+      delete trashLeft[trashId];
+      let data: AppData = {
+        ...s.data,
+        trashIds: s.data.trashIds.filter((x) => x !== trashId),
+        trash: trashLeft,
+      };
+
+      switch (entry.kind) {
+        case 'docType': {
+          const p = entry.payload as DocType;
+          data = { ...data, docTypeIds: [...data.docTypeIds, p.id], docTypes: { ...data.docTypes, [p.id]: p } };
+          break;
+        }
+        case 'template': {
+          const p = entry.payload as TemplateDef;
+          data = {
+            ...data,
+            templateIds: [...data.templateIds, p.id],
+            templates: { ...data.templates, [p.id]: p },
+          };
+          break;
+        }
+        case 'shortcut': {
+          const p = entry.payload as ShortcutDef;
+          data = {
+            ...data,
+            shortcutIds: [...data.shortcutIds, p.id],
+            shortcuts: { ...data.shortcuts, [p.id]: p },
+          };
+          break;
+        }
+        case 'drive': {
+          const p = entry.payload as DriveDef;
+          data = { ...data, driveIds: [...data.driveIds, p.id], drives: { ...data.drives, [p.id]: p } };
+          break;
+        }
+        case 'cheatSheet': {
+          const p = entry.payload as CheatSheetDef;
+          data = {
+            ...data,
+            cheatSheetIds: [...data.cheatSheetIds, p.id],
+            cheatSheets: { ...data.cheatSheets, [p.id]: p },
+          };
+          break;
+        }
+        case 'quote': {
+          const p = entry.payload as QuoteDef;
+          data = { ...data, quoteIds: [...data.quoteIds, p.id], quotes: { ...data.quotes, [p.id]: p } };
+          break;
+        }
+        case 'board': {
+          const p = entry.payload as AppData['boards'][string];
+          data = { ...data, boardIds: [...data.boardIds, p.id], boards: { ...data.boards, [p.id]: p } };
+          break;
+        }
+        case 'contact': {
+          const p = entry.payload as ContactDef;
+          data = {
+            ...data,
+            contactIds: [...data.contactIds, p.id],
+            contacts: { ...data.contacts, [p.id]: p },
+          };
+          break;
+        }
+        case 'vaultEntry': {
+          const p = entry.payload as VaultEntryDef;
+          data = {
+            ...data,
+            vaultEntryIds: [...data.vaultEntryIds, p.id],
+            vaultEntries: { ...data.vaultEntries, [p.id]: p },
+          };
+          break;
+        }
+        default: {
+          const exhaustive: never = entry.kind;
+          throw new Error(`Unhandled trash kind: ${exhaustive}`);
+        }
+      }
+
+      persist(data);
+      return { data };
+    });
+  },
+
+  deleteForever: (trashId) => {
+    set((s) => {
+      const trashLeft = { ...s.data.trash };
+      delete trashLeft[trashId];
+      const data: AppData = {
+        ...s.data,
+        trashIds: s.data.trashIds.filter((x) => x !== trashId),
+        trash: trashLeft,
+      };
+      persist(data);
+      return { data };
+    });
+  },
+
+  purgeExpiredTrash: () => {
+    set((s) => {
+      const cutoff = Date.now() - TRASH_RETENTION_MS;
+      const expired = s.data.trashIds.filter((id) => (s.data.trash[id]?.deletedAt ?? 0) < cutoff);
+      if (expired.length === 0) return s;
+      const trash = { ...s.data.trash };
+      for (const id of expired) delete trash[id];
+      const data: AppData = {
+        ...s.data,
+        trashIds: s.data.trashIds.filter((id) => !expired.includes(id)),
+        trash,
       };
       persist(data);
       return { data };
