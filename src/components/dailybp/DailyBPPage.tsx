@@ -9,45 +9,25 @@ const OTHER = '__other__';
 
 type Stat = 'shots' | 'packages';
 
-interface StatSectionProps {
+interface QuotaRowProps {
   stat: Stat;
   label: string;
   achieved: number;
   quota: number;
-  targets: DailyBPTarget[];
 }
 
-function StatSection({ stat, label, achieved, quota, targets }: StatSectionProps) {
+function QuotaRow({ stat, label, achieved, quota }: QuotaRowProps) {
   const setDailyBPAchieved = useAppStore((s) => s.setDailyBPAchieved);
   const setDailyBPQuota = useAppStore((s) => s.setDailyBPQuota);
-  const addDailyBPTarget = useAppStore((s) => s.addDailyBPTarget);
-  const removeDailyBPTarget = useAppStore((s) => s.removeDailyBPTarget);
-
-  const [person, setPerson] = useState('');
-  const [customName, setCustomName] = useState('');
-  const [targetInput, setTargetInput] = useState('');
-
   const pct = quota > 0 ? Math.min(100, Math.round((achieved / quota) * 100)) : 0;
   const date = todayKey();
 
-  const resolvedName = person === OTHER ? customName.trim() : person;
-  const targetValue = Number(targetInput);
-  const canAdd = resolvedName !== '' && Number.isFinite(targetValue) && targetValue > 0;
-
-  function addTarget() {
-    if (!canAdd) return;
-    addDailyBPTarget(date, stat, resolvedName, targetValue);
-    setPerson('');
-    setCustomName('');
-    setTargetInput('');
-  }
-
   return (
-    <section className="bp-section">
-      <div className="bp-section__header">
-        <h2>{label}</h2>
+    <div className="bp-quota-row">
+      <div className="bp-quota-row__top">
+        <span className="bp-quota-row__label">{label}</span>
         <label className="bp-section__quota">
-          Daily quota
+          Quota
           <input
             type="number"
             min={0}
@@ -57,11 +37,6 @@ function StatSection({ stat, label, achieved, quota, targets }: StatSectionProps
           />
         </label>
       </div>
-      <p className="modal__hint modal__hint--muted">
-        The quota is just today's overall goal — it isn't tied to anyone. Assign portions of it to
-        people below, in Targets.
-      </p>
-
       <div className="bp-card__progress-row">
         <input
           type="number"
@@ -75,42 +50,63 @@ function StatSection({ stat, label, achieved, quota, targets }: StatSectionProps
       <div className="bp-card__bar">
         <div className="bp-card__bar-fill" style={{ width: `${pct}%` }} />
       </div>
+    </div>
+  );
+}
 
-      <h3 className="bp-section__subhead">Targets</h3>
-      <table className="bp-table">
-        <thead>
-          <tr>
-            <th>Person</th>
-            <th>Target</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {targets.map((t) => (
-            <tr key={t.id}>
-              <td>{t.person || 'Unassigned'}</td>
-              <td className="bp-table__num">{t.target}</td>
-              <td>
-                <button className="btn btn--icon" onClick={() => removeDailyBPTarget(date, stat, t.id)}>
-                  <Trash2 size={14} />
-                </button>
-              </td>
-            </tr>
-          ))}
-          {targets.length === 0 && (
-            <tr>
-              <td colSpan={3} className="empty-row">
-                No targets assigned yet today.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+function TargetsChecklist({ targets }: { targets: DailyBPTarget[] }) {
+  const addDailyBPTarget = useAppStore((s) => s.addDailyBPTarget);
+  const toggleDailyBPTarget = useAppStore((s) => s.toggleDailyBPTarget);
+  const removeDailyBPTarget = useAppStore((s) => s.removeDailyBPTarget);
+
+  const [description, setDescription] = useState('');
+  const [person, setPerson] = useState('');
+  const [customName, setCustomName] = useState('');
+
+  const date = todayKey();
+  const resolvedName = person === OTHER ? customName.trim() : person;
+  const canAdd = description.trim() !== '' && resolvedName !== '';
+
+  function addTarget() {
+    if (!canAdd) return;
+    addDailyBPTarget(date, description.trim(), resolvedName);
+    setDescription('');
+    setPerson('');
+    setCustomName('');
+  }
+
+  return (
+    <section className="bp-section">
+      <h2>Targets</h2>
+      <p className="modal__hint modal__hint--muted">
+        The goals for today, each one assigned to whoever's doing it — check them off as they get
+        done.
+      </p>
+
+      <ul className="bp-checklist">
+        {targets.map((t) => (
+          <li key={t.id} className={`bp-checklist__row${t.done ? ' bp-checklist__row--done' : ''}`}>
+            <input type="checkbox" checked={t.done} onChange={() => toggleDailyBPTarget(date, t.id)} />
+            <span className="bp-checklist__desc">{t.description}</span>
+            <span className="bp-checklist__person">{t.person}</span>
+            <button className="btn btn--icon" onClick={() => removeDailyBPTarget(date, t.id)}>
+              <Trash2 size={14} />
+            </button>
+          </li>
+        ))}
+        {targets.length === 0 && <li className="empty-row">No targets set for today yet.</li>}
+      </ul>
 
       <div className="bp-add-row">
+        <input
+          className="field"
+          placeholder="What needs to get done…"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
         <select className="field" value={person} onChange={(e) => setPerson(e.target.value)}>
           <option value="" disabled>
-            Choose person…
+            Assign to…
           </option>
           {PRESET_PEOPLE.map((p) => (
             <option key={p} value={p}>
@@ -127,17 +123,9 @@ function StatSection({ stat, label, achieved, quota, targets }: StatSectionProps
             onChange={(e) => setCustomName(e.target.value)}
           />
         )}
-        <input
-          type="number"
-          min={1}
-          className="field"
-          placeholder="Target"
-          value={targetInput}
-          onChange={(e) => setTargetInput(e.target.value)}
-        />
         <button className="btn btn--accent" onClick={addTarget} disabled={!canAdd}>
           <Plus size={16} />
-          Add Row
+          Add Target
         </button>
       </div>
     </section>
@@ -153,24 +141,28 @@ export function DailyBPPage() {
       <header className="panel__header">
         <div>
           <h1>Daily BP</h1>
-          <p className="panel__subtitle">Today's production goals, tracked as the day goes.</p>
+          <p className="panel__subtitle">Today's battle plan — set the day's quotas, then hand out targets.</p>
         </div>
       </header>
 
-      <StatSection
-        stat="shots"
-        label="Shots in the Can"
-        achieved={day?.shotsAchieved ?? 0}
-        quota={settings.shotsQuota}
-        targets={day?.shotsTargets ?? []}
-      />
-      <StatSection
-        stat="packages"
-        label="Photo Packages"
-        achieved={day?.packagesAchieved ?? 0}
-        quota={settings.packagesQuota}
-        targets={day?.packagesTargets ?? []}
-      />
+      <section className="bp-section">
+        <h2>Today's Quotas</h2>
+        <p className="modal__hint modal__hint--muted">
+          Just the day's overall numbers — not tied to anyone. Assign the work itself to people in
+          Targets, below.
+        </p>
+        <div className="bp-quota-grid">
+          <QuotaRow stat="shots" label="Shots in the Can" achieved={day?.shotsAchieved ?? 0} quota={settings.shotsQuota} />
+          <QuotaRow
+            stat="packages"
+            label="Photo Packages"
+            achieved={day?.packagesAchieved ?? 0}
+            quota={settings.packagesQuota}
+          />
+        </div>
+      </section>
+
+      <TargetsChecklist targets={day?.targets ?? []} />
     </section>
   );
 }

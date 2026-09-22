@@ -34,13 +34,14 @@ a live count for each section. From there:
 8. **Trash** — anything deleted (a template, a cheat sheet, a contact, a
    whole idea board, ...) sits here for 24 hours before it's gone for good,
    with a one-click Restore. Deleting always asks first.
-9. **Daily BP** — the day's production goals, tracked as the day goes: two
-   stat sections (Shots in the Can, Photo Packages), each with a daily quota
-   (just today's overall number, not tied to anyone) and a Targets table
-   underneath where you add rows assigning a portion of it to a person —
-   pick from a short preset list or type a name in; a target always needs a
-   person, that's the point of it. Home shows a read-only progress summary
-   that links through to the full page.
+9. **Daily BP** — the day's battle plan. Up top, two daily quotas (Shots in
+   the Can, Photo Packages) — just the day's overall numbers, not tied to
+   anyone. Below that, **Targets**: a checklist of the specific goals for
+   the day, each one assigned to a person (pick from a short preset list or
+   type a name in — a target always needs someone, that's the point of it)
+   and checked off as it gets done. Home shows a read-only progress summary
+   (both quotas plus how many targets are done) that links through to the
+   full page.
 
 Home also carries **Recent Files** (the last things opened from Templates,
 Tools, Drives, or the folder browser, one click to reopen). The sidebar's

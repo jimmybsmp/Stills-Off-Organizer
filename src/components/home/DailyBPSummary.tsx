@@ -27,6 +27,8 @@ function Row({ label, achieved, quota }: { label: string; achieved: number; quot
 export function DailyBPSummary({ onNavigate }: DailyBPSummaryProps) {
   const settings = useAppStore((s) => s.data.dailyBPSettings);
   const day = useAppStore((s) => s.data.dailyBPDays[todayKey()]);
+  const targets = day?.targets ?? [];
+  const doneCount = targets.filter((t) => t.done).length;
 
   return (
     <button className="bp-summary" onClick={() => onNavigate('dailybp')}>
@@ -36,6 +38,11 @@ export function DailyBPSummary({ onNavigate }: DailyBPSummaryProps) {
       </div>
       <Row label="Shots in the Can" achieved={day?.shotsAchieved ?? 0} quota={settings.shotsQuota} />
       <Row label="Photo Packages" achieved={day?.packagesAchieved ?? 0} quota={settings.packagesQuota} />
+      {targets.length > 0 && (
+        <p className="bp-summary__targets">
+          {doneCount} of {targets.length} target{targets.length === 1 ? '' : 's'} done today
+        </p>
+      )}
     </button>
   );
 }

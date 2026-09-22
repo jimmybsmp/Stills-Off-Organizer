@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export interface DocType {
   id: string;
@@ -101,19 +101,21 @@ export interface RecentFileEntry {
   openedAt: number;
 }
 
+/** One line of the day's battle plan: a goal to accomplish, assigned to
+ * whoever's doing it, checked off as it gets done. Always has a person —
+ * that's the difference between this and the quota above it. */
 export interface DailyBPTarget {
   id: string;
-  /** '' means no one was assigned — assigning a name is always optional. */
+  description: string;
   person: string;
-  target: number;
+  done: boolean;
 }
 
 export interface DailyBPDay {
   date: string; // YYYY-MM-DD, local
   shotsAchieved: number;
-  shotsTargets: DailyBPTarget[];
   packagesAchieved: number;
-  packagesTargets: DailyBPTarget[];
+  targets: DailyBPTarget[];
 }
 
 export interface DailyBPSettings {
@@ -240,6 +242,38 @@ export function migrate(raw: unknown): AppData {
       trash: data.trash ?? {},
       schemaVersion: 3,
     };
+  }
+
+  if ((data.schemaVersion ?? 0) < 4) {
+    type LegacyTarget = { id: string; person: string; target: number };
+    type LegacyDay = {
+      date: string;
+      shotsAchieved?: number;
+      packagesAchieved?: number;
+      shotsTargets?: LegacyTarget[];
+      packagesTargets?: LegacyTarget[];
+    };
+    const legacyDays = (data.dailyBPDays ?? {}) as Record<string, LegacyDay>;
+    const dailyBPDays: Record<string, DailyBPDay> = {};
+    for (const [date, day] of Object.entries(legacyDays)) {
+      const fromLegacy = (label: string, legacy: LegacyTarget[] | undefined): DailyBPTarget[] =>
+        (legacy ?? []).map((t) => ({
+          id: t.id,
+          description: `${label} — ${t.target}`,
+          person: t.person,
+          done: false,
+        }));
+      dailyBPDays[date] = {
+        date,
+        shotsAchieved: day.shotsAchieved ?? 0,
+        packagesAchieved: day.packagesAchieved ?? 0,
+        targets: [
+          ...fromLegacy('Shots in the Can', day.shotsTargets),
+          ...fromLegacy('Photo Packages', day.packagesTargets),
+        ],
+      };
+    }
+    data = { ...data, dailyBPDays, schemaVersion: 4 };
   }
 
   const base = emptyAppData();

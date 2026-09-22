@@ -76,8 +76,9 @@ interface AppStore {
 
   setDailyBPQuota: (stat: DailyBPStat, quota: number) => void;
   setDailyBPAchieved: (dateKey: string, stat: DailyBPStat, achieved: number) => void;
-  addDailyBPTarget: (dateKey: string, stat: DailyBPStat, person: string, target: number) => string;
-  removeDailyBPTarget: (dateKey: string, stat: DailyBPStat, targetId: string) => void;
+  addDailyBPTarget: (dateKey: string, description: string, person: string) => string;
+  toggleDailyBPTarget: (dateKey: string, targetId: string) => void;
+  removeDailyBPTarget: (dateKey: string, targetId: string) => void;
 
   restoreFromTrash: (trashId: string) => void;
   deleteForever: (trashId: string) => void;
@@ -89,7 +90,7 @@ function persist(data: AppData) {
 }
 
 function emptyDay(dateKey: string): DailyBPDay {
-  return { date: dateKey, shotsAchieved: 0, shotsTargets: [], packagesAchieved: 0, packagesTargets: [] };
+  return { date: dateKey, shotsAchieved: 0, packagesAchieved: 0, targets: [] };
 }
 
 function trash(data: AppData, kind: TrashKind, label: string, payload: unknown): AppData {
@@ -620,15 +621,12 @@ export const useAppStore = create<AppStore>((set) => ({
     });
   },
 
-  addDailyBPTarget: (dateKey, stat, person, target) => {
+  addDailyBPTarget: (dateKey, description, person) => {
     const id = makeId();
     set((s) => {
       const day = s.data.dailyBPDays[dateKey] ?? emptyDay(dateKey);
-      const row: DailyBPTarget = { id, person, target };
-      const nextDay: DailyBPDay =
-        stat === 'shots'
-          ? { ...day, shotsTargets: [...day.shotsTargets, row] }
-          : { ...day, packagesTargets: [...day.packagesTargets, row] };
+      const row: DailyBPTarget = { id, description, person, done: false };
+      const nextDay: DailyBPDay = { ...day, targets: [...day.targets, row] };
       const data: AppData = { ...s.data, dailyBPDays: { ...s.data.dailyBPDays, [dateKey]: nextDay } };
       persist(data);
       return { data };
@@ -636,14 +634,26 @@ export const useAppStore = create<AppStore>((set) => ({
     return id;
   },
 
-  removeDailyBPTarget: (dateKey, stat, targetId) => {
+  toggleDailyBPTarget: (dateKey, targetId) => {
+    set((s) => {
+      const day = s.data.dailyBPDays[dateKey];
+      const target = day?.targets.find((t) => t.id === targetId);
+      if (!day || !target) return s;
+      const nextDay: DailyBPDay = {
+        ...day,
+        targets: day.targets.map((t) => (t.id === targetId ? { ...t, done: !t.done } : t)),
+      };
+      const data: AppData = { ...s.data, dailyBPDays: { ...s.data.dailyBPDays, [dateKey]: nextDay } };
+      persist(data);
+      return { data };
+    });
+  },
+
+  removeDailyBPTarget: (dateKey, targetId) => {
     set((s) => {
       const day = s.data.dailyBPDays[dateKey];
       if (!day) return s;
-      const nextDay: DailyBPDay =
-        stat === 'shots'
-          ? { ...day, shotsTargets: day.shotsTargets.filter((t) => t.id !== targetId) }
-          : { ...day, packagesTargets: day.packagesTargets.filter((t) => t.id !== targetId) };
+      const nextDay: DailyBPDay = { ...day, targets: day.targets.filter((t) => t.id !== targetId) };
       const data: AppData = { ...s.data, dailyBPDays: { ...s.data.dailyBPDays, [dateKey]: nextDay } };
       persist(data);
       return { data };

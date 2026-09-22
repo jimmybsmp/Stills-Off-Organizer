@@ -72,15 +72,18 @@ access, so there is one build, not two.
   before the `remove*` call, everywhere one exists — not a custom modal,
   since Trash already provides the real undo path and a native confirm is
   one line per call site instead of a whole component.
-- **Daily BP's quota and its targets are different things — don't merge
-  them.** A stat's quota (`dailyBPSettings`) is one plain number, the day's
-  overall goal, with no person attached; a target (`DailyBPDay.shotsTargets`
-  / `packagesTargets`) is a row that always names a person (a preset or a
-  typed name — never blank) plus their share of it. `DailyBPPage.tsx`
-  disables "Add Row" until a person is resolved; don't reintroduce an
-  "Unassigned" option there. Editing (quota, today's count, target rows)
-  lives only on the dedicated Daily BP page — `DailyBPSummary` on Home is
-  read-only and just links through.
+- **Daily BP's quotas and its targets are different things — don't merge
+  them.** A quota (`dailyBPSettings.shotsQuota`/`packagesQuota`, plus each
+  day's `shotsAchieved`/`packagesAchieved`) is just the day's overall
+  numbers — no person attached, nothing to assign. A target
+  (`DailyBPDay.targets`) is the actual battle plan: a task description plus
+  whoever's doing it (a preset name or typed in — never blank) plus a
+  `done` checkbox, one flat list for the whole day, not split per stat.
+  `DailyBPPage.tsx`'s "Add Target" stays disabled until both a description
+  and a person are filled in — don't reintroduce a bare numeric target or
+  an "Unassigned" option. Editing (quotas, today's counts, the targets
+  checklist) lives only on the dedicated Daily BP page — `DailyBPSummary`
+  on Home is read-only and just links through.
 - **The Vault never touches plaintext outside `electron/main.cjs`.**
   `passwordCipher` on a `VaultEntryDef` is base64 from Electron's
   `safeStorage.encryptString`, produced and consumed only via the
