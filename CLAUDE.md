@@ -104,13 +104,23 @@ npm run typecheck && npm run build
 
 ## Design
 
-Dark chrome sidebar around a light working surface — cards, panels, and the
-idea-board canvas stay white so photos and documents read the way they will
-everywhere else. One warm accent (`--accent`) marks the primary action and
-active nav item. Tokens and shared classes (`.btn`, `.field`, `.panel`,
-`.card-grid`, `.modal`) live at the top of `src/styles/index.css`. This first
-pass is deliberately plain — the brief was function first, a real visual
-design pass comes once the feature set is confirmed.
+An editorial, document-like feel rather than a SaaS dashboard: a dark warm
+charcoal sidebar (serif italic wordmark, tracked-caps nav labels, a hairline
+left rule marking the active item) around a warm ivory working surface.
+Headings and card/list labels are set in `--font-serif` (Newsreader,
+self-hosted via `@fontsource/newsreader` — never a Google Fonts `<link>`,
+per the offline rule below); everything functional (buttons, inputs, body
+copy) stays in `--font-sans` (IBM Plex Sans). One muted clay accent
+(`--accent`) marks the primary action, active states, and counts — it's
+deliberately desaturated, not a bright brand orange. Lists prefer hairline
+dividers over boxed cards (see `.home__grid`/`.home__card`, `.bp-checklist`,
+`.cheatsheet-list__item`); `--radius` is small (6px) and shadows are almost
+entirely absent — the two exceptions are the modal overlay and the idea
+board's photo-drop-shadow, both real depth cues, not decoration. All of this
+lives as tokens/shared classes at the top of `src/styles/index.css`
+(`.btn`, `.field`, `.panel`, `.card-grid`, `.modal`) specifically so a
+future palette or type change is a token edit, not a hunt through every
+component.
 
 ## Known gaps
 

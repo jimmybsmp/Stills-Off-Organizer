@@ -68,8 +68,8 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
   return (
     <nav className="sidebar">
       <div className="sidebar__brand">
-        <span className="sidebar__brand-mark">SO</span>
         <span className="sidebar__brand-name">Stills Off</span>
+        <div className="sidebar__brand-rule" />
       </div>
       <ul className="sidebar__list">
         {NAV.map(({ id, label, hint, Icon }) => (
@@ -78,7 +78,7 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
               className={`sidebar__item${active === id ? ' sidebar__item--active' : ''}`}
               onClick={() => onSelect(id)}
             >
-              <Icon size={18} />
+              <Icon size={15} />
               <span className="sidebar__item-text">
                 <span>{label}</span>
                 {helpMode && <span className="sidebar__item-hint">{hint}</span>}

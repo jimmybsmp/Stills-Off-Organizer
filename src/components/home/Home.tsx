@@ -63,7 +63,9 @@ export function Home({ onNavigate }: HomeProps) {
   return (
     <div className="home">
       <p className="home__eyebrow">{greeting()}</p>
-      <h1 className="home__title">Hello Stills Off</h1>
+      <h1 className="home__title">
+        Hello <em>Stills Off</em>
+      </h1>
       <p className="home__subtitle">Everything the desk needs, in one place.</p>
 
       <div className="home__quote">
@@ -93,7 +95,7 @@ export function Home({ onNavigate }: HomeProps) {
       <div className="home__grid">
         {cards.map(({ section, label, count, Icon }) => (
           <button key={section} className="home__card" onClick={() => onNavigate(section)}>
-            <Icon size={24} />
+            <Icon size={20} strokeWidth={1.4} />
             <span className="home__card-label">{label}</span>
             <span className="home__card-count">{count}</span>
           </button>
