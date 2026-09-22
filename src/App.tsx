@@ -7,6 +7,7 @@ import { Shortcuts } from '@/components/shortcuts/Shortcuts';
 import { Drives } from '@/components/drives/Drives';
 import { CheatSheets } from '@/components/cheatsheets/CheatSheets';
 import { IdeaBoards } from '@/components/ideaboard/IdeaBoards';
+import { DailyBPPage } from '@/components/dailybp/DailyBPPage';
 import { Contacts } from '@/components/contacts/Contacts';
 import { Vault } from '@/components/vault/Vault';
 import { Trash } from '@/components/trash/Trash';
@@ -49,6 +50,7 @@ export default function App() {
         {section === 'drives' && <Drives />}
         {section === 'cheatsheets' && <CheatSheets />}
         {section === 'ideaboard' && <IdeaBoards />}
+        {section === 'dailybp' && <DailyBPPage />}
         {section === 'contacts' && <Contacts />}
         {section === 'vault' && <Vault />}
         {section === 'trash' && <Trash />}

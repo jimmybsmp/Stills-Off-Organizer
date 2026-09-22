@@ -34,14 +34,19 @@ a live count for each section. From there:
 8. **Trash** — anything deleted (a template, a cheat sheet, a contact, a
    whole idea board, ...) sits here for 24 hours before it's gone for good,
    with a one-click Restore. Deleting always asks first.
+9. **Daily BP** — the day's production goals, tracked as the day goes: two
+   stat sections (Shots in the Can, Photo Packages), each with a daily quota
+   (just today's overall number, not tied to anyone) and a Targets table
+   underneath where you add rows assigning a portion of it to a person —
+   pick from a short preset list or type a name in; a target always needs a
+   person, that's the point of it. Home shows a read-only progress summary
+   that links through to the full page.
 
-Home also carries **Daily BP** (two stat tiles — Shots in the Can and Photo
-Packages — each with an editable quota, today's count, and an optional list
-of per-person targets picked from a short preset list or typed in) and
-**Recent Files** (the last things opened from Templates, Tools, Drives, or
-the folder browser, one click to reopen). The sidebar's "Show help" toggle
-adds a one-line plain-English caption under every nav item, and "Back Up My
-Data" copies the whole data file and asset store to a folder you choose.
+Home also carries **Recent Files** (the last things opened from Templates,
+Tools, Drives, or the folder browser, one click to reopen). The sidebar's
+"Show help" toggle adds a one-line plain-English caption under every nav
+item, and "Back Up My Data" copies the whole data file and asset store to a
+folder you choose.
 
 Everything except the home dashboard's counts needs the desktop shell —
 there's a banner across the top when the app is running outside it (e.g. in

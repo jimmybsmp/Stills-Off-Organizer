@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from '@/state/useAppStore';
 import { todayKey } from '@/lib/dates';
-import { X, Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import type { DailyBPTarget } from '@/state/schema';
 
 const PRESET_PEOPLE = ['Mate', 'Jimmy', 'Justin', 'Lara', 'Ava'];
@@ -9,7 +9,7 @@ const OTHER = '__other__';
 
 type Stat = 'shots' | 'packages';
 
-interface StatCardProps {
+interface StatSectionProps {
   stat: Stat;
   label: string;
   achieved: number;
@@ -17,7 +17,7 @@ interface StatCardProps {
   targets: DailyBPTarget[];
 }
 
-function StatCard({ stat, label, achieved, quota, targets }: StatCardProps) {
+function StatSection({ stat, label, achieved, quota, targets }: StatSectionProps) {
   const setDailyBPAchieved = useAppStore((s) => s.setDailyBPAchieved);
   const setDailyBPQuota = useAppStore((s) => s.setDailyBPQuota);
   const addDailyBPTarget = useAppStore((s) => s.addDailyBPTarget);
@@ -30,22 +30,24 @@ function StatCard({ stat, label, achieved, quota, targets }: StatCardProps) {
   const pct = quota > 0 ? Math.min(100, Math.round((achieved / quota) * 100)) : 0;
   const date = todayKey();
 
+  const resolvedName = person === OTHER ? customName.trim() : person;
+  const targetValue = Number(targetInput);
+  const canAdd = resolvedName !== '' && Number.isFinite(targetValue) && targetValue > 0;
+
   function addTarget() {
-    const value = Number(targetInput);
-    if (!Number.isFinite(value) || value <= 0) return;
-    const name = person === OTHER ? customName.trim() : person;
-    addDailyBPTarget(date, stat, name, value);
+    if (!canAdd) return;
+    addDailyBPTarget(date, stat, resolvedName, targetValue);
     setPerson('');
     setCustomName('');
     setTargetInput('');
   }
 
   return (
-    <div className="bp-card">
-      <div className="bp-card__header">
-        <span className="bp-card__label">{label}</span>
-        <label className="bp-card__quota">
-          Quota
+    <section className="bp-section">
+      <div className="bp-section__header">
+        <h2>{label}</h2>
+        <label className="bp-section__quota">
+          Daily quota
           <input
             type="number"
             min={0}
@@ -55,6 +57,10 @@ function StatCard({ stat, label, achieved, quota, targets }: StatCardProps) {
           />
         </label>
       </div>
+      <p className="modal__hint modal__hint--muted">
+        The quota is just today's overall goal — it isn't tied to anyone. Assign portions of it to
+        people below, in Targets.
+      </p>
 
       <div className="bp-card__progress-row">
         <input
@@ -64,29 +70,48 @@ function StatCard({ stat, label, achieved, quota, targets }: StatCardProps) {
           value={achieved || ''}
           onChange={(e) => setDailyBPAchieved(date, stat, Number(e.target.value) || 0)}
         />
-        <span className="bp-card__of">/ {quota}</span>
+        <span className="bp-card__of">/ {quota} today</span>
       </div>
       <div className="bp-card__bar">
         <div className="bp-card__bar-fill" style={{ width: `${pct}%` }} />
       </div>
 
-      {targets.length > 0 && (
-        <ul className="bp-card__targets">
+      <h3 className="bp-section__subhead">Targets</h3>
+      <table className="bp-table">
+        <thead>
+          <tr>
+            <th>Person</th>
+            <th>Target</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
           {targets.map((t) => (
-            <li key={t.id}>
-              <span>{t.person || 'Unassigned'}</span>
-              <span className="bp-card__target-num">{t.target}</span>
-              <button className="bp-card__target-remove" onClick={() => removeDailyBPTarget(date, stat, t.id)}>
-                <X size={11} />
-              </button>
-            </li>
+            <tr key={t.id}>
+              <td>{t.person || 'Unassigned'}</td>
+              <td className="bp-table__num">{t.target}</td>
+              <td>
+                <button className="btn btn--icon" onClick={() => removeDailyBPTarget(date, stat, t.id)}>
+                  <Trash2 size={14} />
+                </button>
+              </td>
+            </tr>
           ))}
-        </ul>
-      )}
+          {targets.length === 0 && (
+            <tr>
+              <td colSpan={3} className="empty-row">
+                No targets assigned yet today.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
-      <div className="bp-card__add-target">
-        <select className="field field--inline" value={person} onChange={(e) => setPerson(e.target.value)}>
-          <option value="">Unassigned</option>
+      <div className="bp-add-row">
+        <select className="field" value={person} onChange={(e) => setPerson(e.target.value)}>
+          <option value="" disabled>
+            Choose person…
+          </option>
           {PRESET_PEOPLE.map((p) => (
             <option key={p} value={p}>
               {p}
@@ -96,7 +121,7 @@ function StatCard({ stat, label, achieved, quota, targets }: StatCardProps) {
         </select>
         {person === OTHER && (
           <input
-            className="field field--inline"
+            className="field"
             placeholder="Name"
             value={customName}
             onChange={(e) => setCustomName(e.target.value)}
@@ -105,39 +130,47 @@ function StatCard({ stat, label, achieved, quota, targets }: StatCardProps) {
         <input
           type="number"
           min={1}
-          className="bp-card__target-input"
+          className="field"
           placeholder="Target"
           value={targetInput}
           onChange={(e) => setTargetInput(e.target.value)}
         />
-        <button className="btn btn--icon" onClick={addTarget} title="Add target">
-          <Plus size={14} />
+        <button className="btn btn--accent" onClick={addTarget} disabled={!canAdd}>
+          <Plus size={16} />
+          Add Row
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
-export function DailyBP() {
+export function DailyBPPage() {
   const settings = useAppStore((s) => s.data.dailyBPSettings);
   const day = useAppStore((s) => s.data.dailyBPDays[todayKey()]);
 
   return (
-    <div className="bp-row">
-      <StatCard
+    <section className="panel">
+      <header className="panel__header">
+        <div>
+          <h1>Daily BP</h1>
+          <p className="panel__subtitle">Today's production goals, tracked as the day goes.</p>
+        </div>
+      </header>
+
+      <StatSection
         stat="shots"
         label="Shots in the Can"
         achieved={day?.shotsAchieved ?? 0}
         quota={settings.shotsQuota}
         targets={day?.shotsTargets ?? []}
       />
-      <StatCard
+      <StatSection
         stat="packages"
         label="Photo Packages"
         achieved={day?.packagesAchieved ?? 0}
         quota={settings.packagesQuota}
         targets={day?.packagesTargets ?? []}
       />
-    </div>
+    </section>
   );
 }

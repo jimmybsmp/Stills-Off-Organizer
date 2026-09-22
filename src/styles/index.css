@@ -945,44 +945,8 @@ button {
   align-items: start;
 }
 
-.bp-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.bp-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.bp-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.bp-card__label {
-  font-weight: 600;
-  font-size: 13.5px;
-}
-
-.bp-card__quota {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 .bp-card__quota-input,
-.bp-card__achieved-input,
-.bp-card__target-input {
+.bp-card__achieved-input {
   width: 56px;
   padding: 4px 6px;
   border-radius: 6px;
@@ -1024,47 +988,133 @@ button {
   transition: width 0.2s ease;
 }
 
-.bp-card__targets {
-  list-style: none;
+/* Daily BP page */
+
+.bp-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  max-width: 640px;
+}
+
+.bp-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.bp-section__header h2 {
   margin: 0;
-  padding: 0;
+  font-size: 17px;
+}
+
+.bp-section__quota {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.bp-section__subhead {
+  margin: 20px 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.bp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+
+.bp-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 0 8px 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.bp-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.bp-table__num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.bp-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bp-add-row .field {
+  width: auto;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Daily BP summary (Home) */
+
+.bp-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.bp-summary:hover {
+  border-color: var(--accent);
+}
+
+.bp-summary__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bp-summary__row {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.bp-card__targets li {
+.bp-summary__row-top {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-body);
+  justify-content: space-between;
+  font-size: 12.5px;
 }
 
-.bp-card__targets li span:first-child {
-  flex: 1;
-  color: var(--text-muted);
-}
-
-.bp-card__target-num {
+.bp-summary__row-nums {
   font-family: var(--font-mono);
-  font-weight: 600;
-}
-
-.bp-card__target-remove {
-  border: none;
-  background: transparent;
   color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-}
-
-.bp-card__add-target {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .recent-files {

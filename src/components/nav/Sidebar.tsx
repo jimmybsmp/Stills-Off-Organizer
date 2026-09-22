@@ -9,6 +9,7 @@ import {
   Users,
   Lock,
   Trash2,
+  Target,
   HelpCircle,
   DatabaseBackup,
   type LucideIcon,
@@ -22,6 +23,7 @@ export type Section =
   | 'drives'
   | 'cheatsheets'
   | 'ideaboard'
+  | 'dailybp'
   | 'contacts'
   | 'vault'
   | 'trash';
@@ -33,6 +35,7 @@ const NAV: { id: Section; label: string; hint: string; Icon: LucideIcon }[] = [
   { id: 'drives', label: 'Drives', hint: 'Jump to a drive or share', Icon: HardDrive },
   { id: 'cheatsheets', label: 'Cheat Sheets', hint: 'Short how-to notes', Icon: BookOpen },
   { id: 'ideaboard', label: 'Idea Boards', hint: 'Arrange reference photos', Icon: LayoutGrid },
+  { id: 'dailybp', label: 'Daily BP', hint: "Today's quotas and targets", Icon: Target },
   { id: 'contacts', label: 'Contacts', hint: 'Names, numbers, emails', Icon: Users },
   { id: 'vault', label: 'Vault', hint: 'Securely stored passwords', Icon: Lock },
   { id: 'trash', label: 'Trash', hint: 'Deleted items, for 24 hours', Icon: Trash2 },

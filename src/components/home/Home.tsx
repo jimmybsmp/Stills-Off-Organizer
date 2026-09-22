@@ -11,11 +11,13 @@ import {
   Users,
   Lock,
   Trash2,
+  Target,
   type LucideIcon,
 } from 'lucide-react';
 import { quoteOfDayId } from '@/lib/quoteOfDay';
+import { todayKey } from '@/lib/dates';
 import { QuoteManager } from './QuoteManager';
-import { DailyBP } from './DailyBP';
+import { DailyBPSummary } from './DailyBPSummary';
 import { RecentFiles } from './RecentFiles';
 
 interface HomeProps {
@@ -38,11 +40,13 @@ export function Home({ onNavigate }: HomeProps) {
   const contactCount = useAppStore((s) => s.data.contactIds.length);
   const vaultCount = useAppStore((s) => s.data.vaultEntryIds.length);
   const trashCount = useAppStore((s) => s.data.trashIds.length);
+  const todaysBP = useAppStore((s) => s.data.dailyBPDays[todayKey()]);
   const quoteIds = useAppStore((s) => s.data.quoteIds);
   const quotes = useAppStore((s) => s.data.quotes);
   const [managingQuotes, setManagingQuotes] = useState(false);
 
   const quote = quotes[quoteOfDayId(quoteIds) ?? ''];
+  const bpAchievedToday = (todaysBP?.shotsAchieved ?? 0) + (todaysBP?.packagesAchieved ?? 0);
 
   const cards: { section: Section; label: string; count: number; Icon: LucideIcon }[] = [
     { section: 'launcher', label: 'Templates', count: templateCount, Icon: FileText },
@@ -50,6 +54,7 @@ export function Home({ onNavigate }: HomeProps) {
     { section: 'drives', label: 'Drives', count: driveCount, Icon: HardDrive },
     { section: 'cheatsheets', label: 'Cheat Sheets', count: cheatSheetCount, Icon: BookOpen },
     { section: 'ideaboard', label: 'Idea Boards', count: boardCount, Icon: LayoutGrid },
+    { section: 'dailybp', label: 'Daily BP', count: bpAchievedToday, Icon: Target },
     { section: 'contacts', label: 'Contacts', count: contactCount, Icon: Users },
     { section: 'vault', label: 'Vault', count: vaultCount, Icon: Lock },
     { section: 'trash', label: 'Trash', count: trashCount, Icon: Trash2 },
@@ -81,7 +86,7 @@ export function Home({ onNavigate }: HomeProps) {
       </div>
 
       <div className="home__panels">
-        <DailyBP />
+        <DailyBPSummary onNavigate={onNavigate} />
         <RecentFiles />
       </div>
 
